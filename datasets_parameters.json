@@ -1,0 +1,56 @@
+{
+  "BME": {
+    "path": "Dataset/BME.pkl",
+    "SEG_SIZE": 129,
+    "CHANNEL_NB": 1,
+    "CLASS_NB": 3
+  },
+  "ECG200": {
+    "path": "Dataset/ECG200.pkl",
+    "SEG_SIZE": 97,
+    "CHANNEL_NB": 1,
+    "CLASS_NB": 2
+  },
+  "ECG5000": {
+    "path": "Dataset/ECG5000.pkl",
+    "SEG_SIZE": 141,
+    "CHANNEL_NB": 1,
+    "CLASS_NB": 5
+  },
+  "Epilepsy": {
+    "path": "Dataset/Epilepsy.pkl",
+    "SEG_SIZE": 206,
+    "CHANNEL_NB": 3,
+    "CLASS_NB": 4
+  },
+  "ERing": {
+    "path": "Dataset/ERing.pkl",
+    "SEG_SIZE": 65,
+    "CHANNEL_NB": 4,
+    "CLASS_NB": 6
+  },
+  "FingerMovements": {
+    "path": "Dataset/FingerMovements.pkl",
+    "SEG_SIZE": 50,
+    "CHANNEL_NB": 28,
+    "CLASS_NB": 2
+  },
+  "MoteStrain": {
+    "path": "Dataset/MoteStrain.pkl",
+    "SEG_SIZE": 85,
+    "CHANNEL_NB": 1,
+    "CLASS_NB": 2
+  },
+  "RacketSports": {
+    "path": "Dataset/RacketSports.pkl",
+    "SEG_SIZE": 30,
+    "CHANNEL_NB": 6,
+    "CLASS_NB": 4
+  },
+  "SyntheticControl": {
+    "path": "Dataset/SyntheticControl.pkl",
+    "SEG_SIZE": 60,
+    "CHANNEL_NB": 1,
+    "CLASS_NB": 6
+  }
+}

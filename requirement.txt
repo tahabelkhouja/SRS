@@ -1,0 +1,5 @@
+matplotlib
+numpy
+sklearn
+tensorflow==2.1.0-gpu
+statsmodels==0.11.0
