@@ -18,5 +18,5 @@ The results will be stored in `Dataset` directory.
 ## Run
 - Example  training run
 ```
-python --dataset_name Cricket --dataset_name_ood Epilepsy
+python Run_SRS.py --dataset_name Cricket --dataset_name_ood Epilepsy
 ```
