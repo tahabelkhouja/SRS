@@ -75,7 +75,7 @@ def main(argv):
     X_train, y_train, X_test, y_test = load_mv_ucr_data(FLAGS.dataset_name, dataset_zip_directory)
         
     pkl.dump([X_train, y_train, X_test, y_test], open("Dataset/"+FLAGS.dataset_name+".pkl", "wb")) 
-    with open('datasets_parameters.json') as jf:
+    with open('datasets_parameters.json', 'r') as jf:
         info = json.load(jf)
     info[FLAGS.dataset_name]={
             "path": "Dataset/"+FLAGS.dataset_name+".pkl",
@@ -83,7 +83,7 @@ def main(argv):
         	 "CHANNEL_NB": X_train.shape[3],
         	 "CLASS_NB": len(np.unique(y_train))
         }
-    with open('datasets_parameters.json', 'a') as jf:
+    with open('datasets_parameters.json', 'w') as jf:
         json.dump(info, jf, indent=2)
         
 if __name__=="__main__":

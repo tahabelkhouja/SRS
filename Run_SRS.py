@@ -50,7 +50,7 @@ def align_set(X_train, y_train_int, input_stl, CLASS_NB):
 
 def main(argv):
     ## Load Data
-    json_param = "UCR_parameters.json"
+    json_param = "datasets_parameters.json"
     with open(json_param) as jf:
         info = json.load(jf)
         d = info[FLAGS.dataset_name]
@@ -60,8 +60,10 @@ def main(argv):
         CLASS_NB = d['CLASS_NB']
     print("Dataset: {}".format(FLAGS.dataset_name))
     X_train, y_train_int, X_test, y_test_int = pkl.load(open(path, 'rb'))
-    min_train = np.min(np.min(X_train, axis=2), axis=0).flatten()
-    max_train = np.min(np.min(X_train, axis=2), axis=0).flatten()
+    #min_train = np.min(np.min(X_train, axis=2), axis=0).flatten()
+    #max_train = np.min(np.min(X_train, axis=2), axis=0).flatten()
+    min_train = np.min(X_train)
+    max_train = np.max(X_train)
     X_train = X_train.reshape((-1, SEG_SIZE, CHANNEL_NB))
     X_test = X_test.reshape((-1, SEG_SIZE, CHANNEL_NB))
     
