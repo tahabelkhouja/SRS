@@ -1,11 +1,8 @@
-import os
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
 
 from tensorflow import keras
 from tensorflow.keras import layers
-from sklearn.manifold import TSNE
 from tensorflow.keras.layers import concatenate as concat
       
 def normalize(x, mn, mx):
@@ -291,17 +288,3 @@ class CVAE_model():
         print("{:.3f}".format(perf))
         return perf
         
-    def plot_label_clusters(self, data, name=""):
-    # Display how the latent space clusters different classes
-        labels = np.argmax(data[1], axis=1)
-        _,z_mean, _, _ = self.encoder(data)
-        print(z_mean.shape)
-        if z_mean.shape[1]==2:
-            print("2D Plot")
-            plt.figure(figsize=(12, 10), num=name)
-            current_palette = sns.color_palette("deep", n_colors=np.unique(labels).shape[0])
-            sns.scatterplot(z_mean[:, 0], z_mean[:, 1], hue=labels, palette=current_palette, s=100)
-            # plt.colorbar()
-            plt.xlabel("z[0]")
-            plt.ylabel("z[1]")
-            plt.show()

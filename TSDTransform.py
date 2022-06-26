@@ -117,14 +117,8 @@ def signals_align(x_ref, x):
     d, _, _, dtw_path = dtwM.dtw(x_in, x_out, dist=lambda x, y: np.linalg.norm(x-y, ord=2))
     scan_res, scan_keys, scan_lengths = scan_path(dtw_path)
     
-    ##Prioritize Diagonal Method 1
     scan_lengths[2] += 1 
     best_transform_key = scan_keys[np.argmax(scan_lengths)]
-    ##Prioritize Diagonal Method 2
-    # if(scan_lengths[2] > 1.15*x.shape[-2]):
-    #     best_transform_key = 'diag_seq'
-    # else:
-    #     best_transform_key = scan_keys[np.argmax(scan_lengths)]
     
     if best_transform_key=='one_to_many':
         x_res = signal_step_reduce(x_out, dtw_path[0][scan_res[best_transform_key][0]], 

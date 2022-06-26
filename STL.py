@@ -2,7 +2,6 @@ import numpy as np
 import copy 
 
 from stldecompose import decompose
-from utils_ import noisy_input
 
 class STL_decomp():
     def __init__(self, seg_size, channel_nb, data, labels):
@@ -57,20 +56,6 @@ class STL_decomp():
             residuals[i] = res - self.pattern[cl]
         return residuals, res_labels
     
-    def update_with_gaussian_data(self, std, n_candidate):
-        g_data, g_labels = noisy_input(self.data_array, self.labels, std, n_candidate)
-        self.gaus_data = {}
-        self.gaus_labels = g_labels
-        for cl in range(self.class_nb): #divide per class
-            x0 = np.zeros((0, self.seg_size, self.channel_nb))
-            for i, y in enumerate(self.gaus_labels):
-                if y==cl:
-                    x = np.zeros_like(g_data[i])
-                    for ch in range(self.channel_nb):
-                        x[0,  :, ch] = g_data[i,0,:,ch]
-                    x0 = np.concatenate([x0, x], axis=0)
-            self.gaus_data[cl] = x0
-        self.STL_extract_pattern()
 
 
 

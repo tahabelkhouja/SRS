@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Aug  8 12:54:10 2019
-
-@author: BkTaha
-"""
 import os
 import json
 import numpy as np
@@ -89,11 +83,11 @@ def main(argv):
         	 "CHANNEL_NB": X_train.shape[3],
         	 "CLASS_NB": len(np.unique(y_train))
         }
-    with open('datasets_parameters.json', 'w') as jf:
+    with open('datasets_parameters.json', 'a') as jf:
         json.dump(info, jf, indent=2)
         
 if __name__=="__main__":
-    flags.DEFINE_string('dataset_name', 'Heartbeat ', 'Dataset name')
+    flags.DEFINE_string('dataset_name', 'AtrialFibrillation ', 'Dataset name')
     app.run(main)   
     
     
