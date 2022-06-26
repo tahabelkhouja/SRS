@@ -34,19 +34,19 @@ for path in path_dict.values():
     except FileExistsError:
         continue
     
-def align_set(X_train, y_train_int, input_stl, CLASS_NB): 
-    X_train_aligned = np.zeros((0,)+X_train.shape[1:])
-    y_train_aligned_int = np.zeros((0,))
+def align_set(X_train, y_train_int, input_stl, CLASS_NB, align_iter=5): 
+    X_train = np.zeros((0,)+X_train.shape[1:])
+    y_train_int = np.zeros((0,))
     for cl in range(CLASS_NB):
         print('Aligning', cl+1, '/', CLASS_NB, '...')
         index = np.argwhere(y_train_int==cl).flatten()
         X_set = X_train[index]
-        X_set_aligned = tsd.optimize_alignment_to_pattern(input_stl.pattern[cl], X_set)
-        X_train_aligned = np.concatenate([X_train_aligned, X_set_aligned], axis=0)
-        y_train_aligned_int = np.concatenate([y_train_aligned_int, cl*np.ones(len(index), dtype=np.int)])
-    y_train_aligned = tf.keras.utils.to_categorical(y_train_aligned_int)
+        X_set_aligned = tsd.optimize_alignment_to_pattern(input_stl.pattern[cl], X_set, iterations=align_iter)
+        X_train = np.concatenate([X_train, X_set_aligned], axis=0)
+        y_train_int = np.concatenate([y_train_int, cl*np.ones(len(index), dtype=np.int)])
+    y_train = tf.keras.utils.to_categorical(y_train_int)
     
-    return X_train_aligned, y_train_aligned_int, y_train_aligned
+    return X_train, y_train_int, y_train
 
 def main(argv):
     ## Load Data
@@ -76,7 +76,7 @@ def main(argv):
                 
                 
     ## Align X_train
-    X_train_aligned, y_train_aligned_int, y_train_aligned = align_set(X_train, y_train_int, input_stl, CLASS_NB)
+    X_train, y_train_int, y_train = align_set(X_train, y_train_int, input_stl, CLASS_NB, align_iter=FLAGS.align_iter)
         
     ## Train Data CVAE 
     print("Preparing CVAE models . . .")
@@ -87,10 +87,10 @@ def main(argv):
     cvae_model_path = path_dict['cvae_align']+"CVAE_"+FLAGS.dataset_name+"_"+FLAGS.arch+"_weights"
     
     if os.path.isfile(cvae_model_path+".index") and not FLAGS.train_ml:
-        cvae.train(X_train_aligned, y_train_aligned, checkpoint_path=cvae_model_path, 
+        cvae.train(X_train, y_train, checkpoint_path=cvae_model_path, 
                 new_train=False)
     else:
-        cvae.train(X_train_aligned, y_train_aligned, checkpoint_path=cvae_model_path,  
+        cvae.train(X_train, y_train, checkpoint_path=cvae_model_path,  
                     epochs=FLAGS.epochs, batch_size=FLAGS.batch_size, new_train=True, verbose=0)
                     
     
@@ -98,22 +98,24 @@ def main(argv):
     if os.path.isfile(path_dict['stl_align']+FLAGS.dataset_name+"_STL_decomp.pkl"):    
         input_stl = pkl.load(open(path_dict['stl_align']+FLAGS.dataset_name+"_STL_decomp.pkl", 'rb'))
     else:
-        input_stl = STL.STL_decomp(SEG_SIZE, CHANNEL_NB, X_train_aligned, y_train_aligned_int)
+        input_stl = STL.STL_decomp(SEG_SIZE, CHANNEL_NB, X_train, y_train_int)
         pkl.dump(input_stl, open(path_dict['stl_align']+FLAGS.dataset_name+"_STL_decomp.pkl", 'wb'))
             
             
     #Residulas on Train data
-    residuals_train, res_labels = input_stl.residuals_of(X_train_aligned, y_train_aligned_int)
+    residuals_train, res_labels = input_stl.residuals_of(X_train, y_train_int)
     res_labels_hot = tf.keras.utils.to_categorical(res_labels)
     
     #Residuals on Test data
-    X_test_aligned, y_test_aligned_int, y_test_aligned = align_set(X_test, y_test_int, input_stl, CLASS_NB)
-    residuals_test, res_labels_test = input_stl.residuals_of(X_test_aligned, y_test_aligned_int)
+    X_test, y_test_int, y_test = align_set(X_test, y_test_int, input_stl, CLASS_NB, align_iter=FLAGS.align_iter)
+    residuals_test, res_labels_test = input_stl.residuals_of(X_test, y_test_int)
     res_labels_test_hot = tf.keras.utils.to_categorical(res_labels_test)
     
     ## Train Residuals CVAE 
-    min_train = np.min(np.min(residuals_train, axis=2), axis=0).flatten()
-    max_train = np.max(np.max(residuals_train, axis=2), axis=0).flatten()
+    # min_train = np.min(np.min(residuals_train, axis=2), axis=0).flatten()
+    # max_train = np.max(np.max(residuals_train, axis=2), axis=0).flatten()
+    min_train = np.min(residuals_train)
+    max_train = np.max(residuals_train)
     rescvae = CVAE_model(FLAGS.latent_size, SEG_SIZE, CHANNEL_NB, CLASS_NB, min_train=min_train, max_train=max_train,
                       arch=FLAGS.arch, show_summary=0)
     
@@ -128,13 +130,13 @@ def main(argv):
     ## SRS on In-Distribution data
     print("-- In-Distribution processing . . .")
     
-    ll_x_in = cvae.likelihood(X_train_aligned, y_train_aligned,  mc_range=50)
+    ll_x_in = cvae.likelihood(X_train, y_train,  mc_range=50)
     ll_rem_in = rescvae.likelihood(residuals_train, res_labels_hot,  mc_range=50)
     
     ratio1 = ll_x_in/ll_rem_in
     pkl.dump([ratio1, ll_x_in, ll_rem_in], open(path_dict['results_align']+FLAGS.dataset_name+"_res.pkl", 'wb'))
     
-    ll_x_in_test = cvae.likelihood(X_test_aligned, y_test_aligned,  mc_range=50)
+    ll_x_in_test = cvae.likelihood(X_test, y_test,  mc_range=50)
     ll_rem_in_test = rescvae.likelihood(residuals_test, res_labels_test_hot,  mc_range=50)
     
     ratio_test = ll_x_in_test/ll_rem_in_test
@@ -162,7 +164,7 @@ def main(argv):
     ood_y_test = tf.keras.utils.to_categorical(ood_y_test_int)
     ood_y_int = np.concatenate([ood_y_train_int, ood_y_test_int], axis=0)
     ood_y = np.concatenate([ood_y_train, ood_y_test], axis=0)
-    ood_x, ood_y_int, ood_y = align_set(ood_X, ood_y_int, input_stl, CLASS_NB) #Align
+    ood_x, ood_y_int, ood_y = align_set(ood_X, ood_y_int, input_stl, CLASS_NB, align_iter=FLAGS.align_iter) #Align
         
     residuals_ood, res_ood_labels = input_stl.residuals_of(ood_X, ood_y_int)
     res_ood_labels_hot = tf.keras.utils.to_categorical(res_ood_labels)
@@ -177,10 +179,10 @@ def main(argv):
         
     ## Compute AUROC score
 
-    ratio1, _, _ = pkl.load(open(path_dict['results']+FLAGS.dataset_name+"_res.pkl", 'rb'))
-    ratio_test, _, _ = pkl.load(open(path_dict['results']+FLAGS.dataset_name+"_res_onTest.pkl", 'rb'))
+    ratio1, _, _ = pkl.load(open(path_dict['results_align']+FLAGS.dataset_name+"_res.pkl", 'rb'))
+    ratio_test, _, _ = pkl.load(open(path_dict['results_align']+FLAGS.dataset_name+"_res_onTest.pkl", 'rb'))
     ratio_in = np.concatenate([ratio1, ratio_test])    
-    ratio_on_ood = pkl.load(open(path_dict['results']+FLAGS.dataset_name+"_res_OODres.pkl", 'rb'))[0]
+    ratio_on_ood = pkl.load(open(path_dict['results_align']+FLAGS.dataset_name+"_OODres.pkl", 'rb'))[0]
     
     ratio_ood, ll_x_ood, ll_x_ood_rem = ratio_on_ood[FLAGS.dataset_name_ood]
     ratio_dict_real = {
@@ -197,8 +199,9 @@ if __name__=="__main__":
    flags.DEFINE_boolean('train_ml', True, 'True: Train models; False: Load models')
    flags.DEFINE_integer('latent_size', 32, 'Dimension of the latent space')
    flags.DEFINE_string('arch', 'CONV', 'Model architecture')
-   flags.DEFINE_integer('batch_size', 32, 'RO-TS Iterations')
-   flags.DEFINE_integer('epochs', 500, 'RO-TS GAK path sampling')
+   flags.DEFINE_integer('batch_size', 32, 'Batch size')
+   flags.DEFINE_integer('epochs', 500, 'Epochs')
+   flags.DEFINE_integer('align_iter', 5, 'Number of iterations for alignment process')
    app.run(main)            
         
         

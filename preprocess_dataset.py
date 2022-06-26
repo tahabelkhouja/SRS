@@ -12,7 +12,7 @@ FLAGS = flags.FLAGS
 
 def load_mv_ucr_data(dataset_name, parent_file):
     #Extract Data Dimensions
-    dim_df = pd.read_csv("DatasetMVDimensions.csv")
+    dim_df = pd.read_csv("DataDimensions.csv")
     ds_idx = dim_df[dim_df["Problem"]==dataset_name].index[0]
     ds_trn_size = int(dim_df.at[ds_idx, "TrainSize"])
     ds_tst_size = int(dim_df.at[ds_idx, "TestSize"])

@@ -11,7 +11,7 @@ pip install -r requirement.txt
 - Download the .zip file and extract it it in `UCRDatasets/{dataset_name}` directory.
 - Run the following command for pre-processing a given dataset while specifying if it is multivariate, for example, on SyntheticControl dataset
 ```
-python preprocess_dataset.py --dataset_name=AtrialFibrillation
+python preprocess_dataset.py --dataset_name AtrialFibrillation
 ```
 The results will be stored in `Dataset` directory. 
 
