@@ -35,18 +35,19 @@ for path in path_dict.values():
         continue
     
 def align_set(X_train, y_train_int, input_stl, CLASS_NB, align_iter=5): 
-    X_train = np.zeros((0,)+X_train.shape[1:])
-    y_train_int = np.zeros((0,))
+    X_train_aligned = np.zeros((0,)+X_train.shape[1:])
+    y_train_aligned = np.zeros((0,))
     for cl in range(CLASS_NB):
         print('Aligning', cl+1, '/', CLASS_NB, '...')
         index = np.argwhere(y_train_int==cl).flatten()
+        print(index)
         X_set = X_train[index]
         X_set_aligned = tsd.optimize_alignment_to_pattern(input_stl.pattern[cl], X_set, iterations=align_iter)
-        X_train = np.concatenate([X_train, X_set_aligned], axis=0)
-        y_train_int = np.concatenate([y_train_int, cl*np.ones(len(index), dtype=np.int)])
+        X_train_aligned = np.concatenate([X_train_aligned, X_set_aligned], axis=0)
+        y_train_aligned = np.concatenate([y_train_aligned, cl*np.ones(len(index), dtype=np.int)])
     y_train = tf.keras.utils.to_categorical(y_train_int)
     
-    return X_train, y_train_int, y_train
+    return X_train_aligned, y_train_int, y_train_aligned
 
 def main(argv):
     ## Load Data
