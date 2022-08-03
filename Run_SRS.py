@@ -40,7 +40,6 @@ def align_set(X_train, y_train_int, input_stl, CLASS_NB, align_iter=5):
     for cl in range(CLASS_NB):
         print('Aligning', cl+1, '/', CLASS_NB, '...')
         index = np.argwhere(y_train_int==cl).flatten()
-        print(index)
         X_set = X_train[index]
         X_set_aligned = tsd.optimize_alignment_to_pattern(input_stl.pattern[cl], X_set, iterations=align_iter)
         X_train_aligned = np.concatenate([X_train_aligned, X_set_aligned], axis=0)
