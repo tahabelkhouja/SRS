@@ -204,7 +204,7 @@ if __name__=="__main__":
    flags.DEFINE_string('arch', 'CONV', 'Model architecture')
    flags.DEFINE_integer('batch_size', 32, 'Batch size')
    flags.DEFINE_integer('epochs', 500, 'Epochs')
-   flags.DEFINE_integer('align_iter', 5, 'Number of iterations for alignment process')
+   flags.DEFINE_integer('align_iter', 1, 'Number of iterations for alignment process')
    app.run(main)            
         
         
