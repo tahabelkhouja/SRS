@@ -1,5 +1,5 @@
 # Seasonal Ratio Score (SRS) for Time-Series OOD detection
-Python Implementation of RObustTraining forTime-Series (RO-TS) for the paper: "[Out-of-Distribution Detection in Time-Series Domain: A Novel Seasonal Ratio Scoring Approach]()" by Taha Belkhouja, Yan Yan, and Janardhan Rao Doppa.
+Python Implementation of RObustTraining forTime-Series (RO-TS) for the paper: "[Out-of-Distribution Detection in Time-Series Domain: A Novel Seasonal Ratio Scoring Approach](https://arxiv.org/abs/2207.04306)" by Taha Belkhouja, Yan Yan, and Janardhan Rao Doppa.
 
 ## Setup 
 ```
