@@ -13,26 +13,52 @@ def denormalize(x, mn, mx):
     
 def log_normal_pdf(sample, mean, logvar, raxis=1):
     log2pi = tf.math.log(2. * np.pi)
-    return tf.reduce_sum(
-        -.5 * ((sample - mean) ** 2. * tf.exp(-logvar) + logvar + log2pi),
+    return tf.reduce_sum(-.5 * ((sample - mean) ** 2. * tf.exp(-logvar) + logvar + log2pi),
         axis=raxis)
         
+# class Normalize(layers.Layer):
+#     def __init__(self, mn=0, mx=1):
+#         super(Normalize, self).__init__()
+#         self.mn = self.add_weight(initializer=tf.keras.initializers.Constant(value=mn), name="norm_mn", trainable=False)
+#         self.mx = self.add_weight(initializer=tf.keras.initializers.Constant(value=mx), name="norm_mx", trainable=False)
+    
+#     def call(self, inputs):
+#         num = tf.subtract(inputs, self.mn)
+#         denum = tf.subtract(self.mx, self.mn)
+#         return tf.divide(num, denum)
+    
+# class Denormalize(layers.Layer):
+#     def __init__(self, mn=0, mx=1):
+#         super(Denormalize, self).__init__()
+#         self.mn = self.add_weight(initializer=tf.keras.initializers.Constant(value=mn), name="denorm_mn", trainable=False)
+#         self.mx = self.add_weight(initializer=tf.keras.initializers.Constant(value=mx), name="denorm_mx", trainable=False)
+    
+#     def call(self, inputs):
+#         el1 = tf.subtract(self.mx, self.mn)
+#         el2 = tf.multiply(inputs, el1)
+#         return tf.add(el2, self.mn)
+
+      
 class Normalize(layers.Layer):
-    def __init__(self, mn=0, mx=1):
+    def __init__(self, mn=[0], mx=[1], channel_nb=1):
         super(Normalize, self).__init__()
-        self.mn = self.add_weight(initializer=tf.keras.initializers.Constant(value=mn), name="norm_mn", trainable=False)
-        self.mx = self.add_weight(initializer=tf.keras.initializers.Constant(value=mx), name="norm_mx", trainable=False)
+        # mn_init = tf.random_normal_initializer()
+        self.mn = tf.reshape(tf.Variable(initial_value=mn, dtype="float64", trainable=False), shape=(1, channel_nb))
+        # mx_init = tf.random_normal_initializer()
+        self.mx = tf.reshape(tf.Variable(initial_value=mx, dtype="float64", trainable=False), shape=(1, channel_nb))
     
     def call(self, inputs):
         num = tf.subtract(inputs, self.mn)
         denum = tf.subtract(self.mx, self.mn)
         return tf.divide(num, denum)
-    
+
 class Denormalize(layers.Layer):
-    def __init__(self, mn=0, mx=1):
+    def __init__(self, mn=[0], mx=[1], channel_nb=1):
         super(Denormalize, self).__init__()
-        self.mn = self.add_weight(initializer=tf.keras.initializers.Constant(value=mn), name="denorm_mn", trainable=False)
-        self.mx = self.add_weight(initializer=tf.keras.initializers.Constant(value=mx), name="denorm_mx", trainable=False)
+        # mn_init = tf.random_normal_initializer()
+        self.mn = tf.reshape(tf.Variable(initial_value=mn, dtype="float64", trainable=False), shape=(1, channel_nb))
+        # mx_init = tf.random_normal_initializer()
+        self.mx = tf.reshape(tf.Variable(initial_value=mx, dtype="float64", trainable=False), shape=(1, channel_nb))
     
     def call(self, inputs):
         el1 = tf.subtract(self.mx, self.mn)
@@ -206,11 +232,10 @@ class CVAE_model():
     
     def likelihood(self, data, labels, mc_range=10):
         lls = []
-        for x, y in zip(data, labels):
-            x = np.expand_dims(x, 0)
-            y = np.expand_dims(y, 0)
+        data = tf.data.Dataset.from_tensor_slices((data, labels)).batch(128)
+        for x, y in tqdm(data):
             x_normal, z_mean, z_log_var, z_conditional = self.encoder([x, y])
-            rl = 0
+            rl = np.zeros(len(x))
             for mc_i in range(mc_range):
                 z = Sampling()([z_mean, z_log_var])
                 z_conditional = concat([z, y])
@@ -218,46 +243,11 @@ class CVAE_model():
                 reconstruction_loss = tf.reduce_sum(
                     keras.losses.binary_crossentropy(x_normal, reconstruction_normal)
                 )
-                rl += -reconstruction_loss
-            lls.append(rl/mc_range)
+                rl = rl - reconstruction_loss
+            lls.extend(rl/mc_range)
         return np.array(lls)
     
     
-    
-    def likelihood_max(self, x, y, mc_range=50):
-        x_normal, z_mean, z_log_var, z_conditional = self.encoder([x, y])
-        max_ll_x = -np.inf
-        for mc_i in range(mc_range):
-            z = Sampling()([z_mean, z_log_var])
-            z_conditional = concat([z, y])
-            reconstruction_normal, _ = self.decoder(z_conditional)
-            cross_ent = tf.nn.sigmoid_cross_entropy_with_logits(logits=reconstruction_normal, labels=tf.Variable(x, dtype=tf.float32))
-            logpx_z = -tf.reduce_sum(cross_ent, axis=[1, 2])
-            logpz = log_normal_pdf(z, 0., 1.)
-            logqz_x = log_normal_pdf(z, z_mean, z_log_var)
-            ll_x = logpx_z + logpz - logqz_x
-            if ll_x >= max_ll_x:
-                max_ll_x = ll_x
-        return max_ll_x
-
-    def factor_p_x(self, x, y, factor, mc_range=10):
-        '''
-        return the equivalent of p(x)/factor
-        '''
-        x_normal, z_mean, z_log_var, z_conditional = self.encoder([x, y])
-        sum_loss = 0
-        for mc_i in range(mc_range):
-            z = Sampling()([z_mean, z_log_var])
-            z_conditional = concat([z, y])
-            reconstruction_normal, _ = self.decoder(z_conditional)
-            cross_ent = tf.nn.sigmoid_cross_entropy_with_logits(logits=reconstruction_normal, labels=tf.Variable(x, dtype=tf.float32))
-            logpx_z = -tf.reduce_sum(cross_ent, axis=[1, 2])
-            logpz = log_normal_pdf(z, 0., 1.)
-            logqz_x = log_normal_pdf(z, z_mean, z_log_var)
-            logp_x = logpx_z + logpz - logqz_x
-            ep_x = np.exp(logp_x-factor)
-            sum_loss += ep_x
-        return sum_loss/mc_range
         
     def performance(self, X, Y, order=2):
         metric = lambda x,y: (1/len(x))*(np.sum((x-y)**2))
